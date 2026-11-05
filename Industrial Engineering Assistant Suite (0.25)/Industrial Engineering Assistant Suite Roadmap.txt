@@ -1,0 +1,333 @@
+INDUSTRIAL ENGINEERING ASSISTANT SUITE ROADMAP
+Author: Dyson Ye
+Last Updated: 11/07/2026
+================================================================================
+
+
+OVERVIEW:
+A suite of four analytics apps covering the full manufacturing and supply chain
+planning stack, following the standard S&OP (Sales & Operations Planning)
+hierarchy used in industry.
+
+    Distribution Planning    ->  App 1: Inventory Assistant for Supply Chain
+    Shop Floor Execution     ->  App 2: Operations Assistant for Manufacturing
+    Production Planning      ->  App 3: Production Assistant for Manufacturing
+    Quality Control          ->  App 4: Quality Assistant for Manufacturing
+
+Note: App 2 (Operations) was built before App 3 (Planning) by design — shop
+floor execution tooling was prioritised as the more immediate need.
+
+
+================================================================================
+SUITE ARCHITECTURE
+================================================================================
+
+The suite is hosted as a single Streamlit multi-page application on Hugging
+Face Spaces. A root landing page (app.py) serves as the suite menu, with each
+app living in its own subfolder and accessible via Streamlit page navigation.
+
+Structure:
+  app.py                                    <- Suite landing page / menu
+  pages/
+    inventory_assistant.py                  <- Wrapper: launches App 1
+    operations_assistant.py                 <- Wrapper: launches App 2
+  Inventory Assistant for Supply Chain/
+    app.py                                  <- App 1 full application
+  Operations Assistant for Manufacturing/
+    app.py                                  <- App 2 full application
+  Production Assistant for Manufacturing/     <- Placeholder (App 3, planned)
+  Quality Assistant for Manufacturing/      <- Placeholder (App 4, planned)
+  requirements.txt                          <- Combined dependencies for all apps
+
+
+================================================================================
+APP 1: INVENTORY ASSISTANT FOR SUPPLY CHAIN
+================================================================================
+
+Status:  COMPLETED - Live on Hugging Face
+URL:     https://lqwyslzg-inventoryassistantforsupplychain.hf.space
+
+WHO IT'S FOR:
+Supply chain managers, demand planners, inventory analysts, distributors,
+wholesalers, retailers.
+
+CORE PURPOSE:
+Demand-side analytics. Understand what is selling, forecast what will sell,
+and make smarter stocking decisions.
+
+TABS AND FEATURES:
+
+  TAB 1: ABC Inventory Analysis
+  - ABC Analysis
+    Ranks items by demand contribution (A = top 80%, B = next 15%, C = bottom 5%)
+    Supports both Demand and Revenue classification modes
+  - XYZ Classification
+    Measures demand stability (X = stable, Y = variable, Z = erratic)
+  - ABC-XYZ Matrix
+    Combines both classifications into a 9-cell action guide with recommendations
+  - Pareto Charts
+  - Full ABC-XYZ Ranking Table (downloadable)
+  - Auto item categorization using TF-IDF and KMeans clustering (AI)
+  - Custom keyword-based category rules
+
+  TAB 2: Customer Segmentation
+  - RFM Analysis (Recency, Frequency, Monetary)
+  - Segments: Champions, Loyal, At Risk, Lost, Low Value, Occasional, New
+  - Churn Detection
+  - Annual Customer Value Estimation
+  - Top Items by Segment
+  - Customer Detail Table with recommended actions (downloadable)
+
+  TAB 3: Demand Forecast
+  - Adaptive model selection based on data characteristics
+  - Models: Prophet, Prophet Logistic, Holt/ETS, Croston (intermittent), TBATS
+  - Forecast accuracy metrics: MAPE and MASE
+  - Uncertainty bands on all forecasts
+  - Forecast summary table (downloadable)
+
+  TAB 4: Demand Health
+  - Slow mover and dead stock detection
+  - Seasonal adjustment before flagging declines
+  - Changepoint detection (exact month demand shifted)
+  - Status classification: Active, Recovering, Stagnant, Declining, Dead Stock
+  - Demand History Chart per item (downloadable)
+
+  TAB 5: Stock Control & Optimisation
+  - Reorder Point Alert with EOQ, statistical safety stock, trend-adjusted demand
+  - Stockout Risk Alert using XGBoost ML classifier (AI)
+  - Optimisation Models (scipy SLSQP):
+    Safety Stock Portfolio, Budget-Constrained Replenishment,
+    Order Schedule, Supplier Allocation
+  - Procurement Schedule (DRP-lite): 52-week replenishment schedule
+
+TECHNICAL DETAILS:
+  - Multi-file upload with automatic column harmonization
+  - Multi-location filtering
+  - Forest Green and Gold color theme
+  - HF-compatible: lazy Prophet imports, LabelEncoder for XGBoost
+
+PLANNED FUTURE ENHANCEMENTS:
+  - AWS S3 file persistence (Phase 1)
+  - AWS Lambda + SES automated daily reorder alerts (Phase 2)
+  - Amazon Bedrock AI-powered plain-English summaries (Phase 3)
+  - Full multi-location DRP with transit times
+
+PLANNING HIERARCHY LEVEL:
+Distribution planning - the top layer of the S&OP stack.
+
+
+================================================================================
+APP 2: OPERATIONS ASSISTANT FOR MANUFACTURING
+================================================================================
+
+Status:  COMPLETED - Integrated into suite (pending HF deployment)
+
+WHO IT'S FOR:
+Production managers, industrial engineers, plant managers, operations analysts.
+
+CORE PURPOSE:
+Shop floor execution analytics. Analyse the current state of a production line,
+simulate improvements, diagnose machine health, and plan for future capacity.
+
+TABS AND FEATURES:
+
+  TAB 1: Current State Analysis (root cause analysis flow)
+  - Current Line Overview
+    Station load chart vs takt time, bottleneck callout
+    Workstation Detail expander with status colouring
+  - Cycle Time Analysis
+    Per-operation bar chart with variability error bars
+    Product and workstation filters
+    Smart callout: over takt, near takt, high variability
+    AI: Isolation Forest anomaly detection on readings
+    AI: KMeans variability clustering (Stable / Consistently Slow / High Variability)
+  - Cycle Time Trend Over Time
+    Line chart of average CT across study dates
+  - Cycle Time by Operator
+    Bar chart comparing operator performance on same operations
+  - Waste Analysis
+    Lead Time Breakdown: work time vs queue time per station
+    Line Flow Settings: user-configurable station sequence and queue times
+    Idle Time per Workstation chart
+  - Value Stream Summary
+    5 key metrics: VA Ratio, VA Time, Idle Time, Queue Time, Process Lead Time
+    Line Health Score (composite: Balance Efficiency + Bottleneck Severity + VA Ratio)
+    Line Diagnosis: all issues ranked by severity within 4 categories
+    Recommended Actions: prioritised action list
+    Value Stream Detail expander with download
+
+  TAB 2: Line Balancing Simulation
+  - Simulated Line Status: 5 KPI metrics
+  - Rebalancing Simulation:
+    Auto-Optimisation Panel:
+      Operation Constraints (Sequence, Locked, Splittable)
+      Optimisation targets: Balanced, Minimise Stations, Minimise Operators
+      ILP solver (PuLP CBC) with LPT fallback
+      Operator assignment LP respecting Splittable constraint
+      Structural suggestions: empty stations, unused operators, stations to add/remove
+    Simulation Control Panel:
+      Operators Management (add/remove/undo/reset)
+      Action Menu: Move operation, Assign/split across operators, Add/Remove station
+    Station Load chart (before vs after, with Monte Carlo P95 if Min/Max CT present)
+    Idle Time Comparison chart (before vs after)
+    Operator Load chart + Utilization table
+    Simulation Change Log with 5 summary metrics
+    Current Operation Assignment Detail expander
+    Download Rebalancing Plan
+
+  TAB 3: Machine Health Diagnostics (root cause analysis flow)
+  - OEE Overview: manual entry or from production log
+    OEE waterfall chart, component diagnosis callout
+  - Downtime Analysis:
+    4 KPI metrics, Pareto chart with 80% threshold
+    AI: Isolation Forest anomaly detection on downtime events
+    Downtime Event Detail expander with download
+  - Reliability Metrics:
+    MTBF and MTTR per machine
+    AI: Weibull distribution fitting for failure pattern (Burn-in / Random / Wear-out)
+    Inherent Availability %, row colouring for poor MTBF/MTTR ratio
+  - Trend Analysis:
+    OEE + Availability + Quality trend over time
+    Monthly Downtime trend (bar + event count overlay)
+  - Shift Comparison:
+    OEE by shift bar chart, gap callout, Downtime by Shift table
+  - Maintenance Intelligence:
+    User-entered planned vs unplanned cost inputs
+    Optimal PM interval via cost-minimisation model: T = sqrt(2 x Cp x MTBF / Cu)
+    Per-machine recommendation and estimated cost per day
+    Download Maintenance Plan
+
+  TAB 4: Discrete Event Simulation
+  - Placeholder: planned for future release
+  - Will use time study CT data + machine reliability data for full factory DES
+
+GLOBAL FEATURES:
+  - Required Setup: Takt Time Calculator (5 metrics incl. hourly throughput),
+    Product Mix Control (weighted average CT across products)
+  - Filter by Production Line: global line selector when Line column present
+  - Data Overview expander in each tab
+  - Consistent dark navy/steel blue + gold color theme
+  - All charts rendered as high-res PNG via matplotlib
+  - Download buttons on all tables
+
+AI / ML FEATURES:
+  - Isolation Forest: anomaly detection on cycle time readings (Tab 1)
+  - KMeans: operation variability clustering (Tab 1)
+  - ILP (PuLP CBC): optimal station assignment (Tab 2)
+  - LP (PuLP): operator assignment respecting Splittable constraints (Tab 2)
+  - Monte Carlo: P95 variability bars using triangular distribution (Tab 2)
+  - Isolation Forest: anomaly detection on downtime events (Tab 3)
+  - Weibull distribution fitting: failure pattern classification (Tab 3)
+
+TESTING FILES (in Testing File subfolder):
+  - Downtime Log Sample.xlsx
+  - Production Log Sample.xlsx
+  - Time Study Sample 01.xlsx
+  - Time Study Sample 02 (Operator & Date).xlsx
+  - Time Study Sample 03 (Min & Max CT).xlsx
+  - Time Study Sample 04 (Multi-Line).xlsx
+
+PLANNING HIERARCHY LEVEL:
+Shop floor execution - the operational layer of the S&OP stack.
+
+RELATIONSHIP TO OTHER APPS:
+  - Receives production schedule from App 3 (Production Assistant, planned)
+  - Feeds actual production output to App 4 (Quality Assistant, planned)
+
+
+================================================================================
+APP 3: PRODUCTION ASSISTANT FOR MANUFACTURING
+================================================================================
+
+Status:  PLANNED
+
+WHO IT'S FOR:
+Production planners, materials managers, supply chain managers.
+
+CORE PURPOSE:
+Bridge between demand signals and production execution. Translate what needs to
+be sold into what needs to be produced and what materials need to be ordered.
+
+PLANNED FEATURES:
+  - BOM Management and Explosion
+  - Where-Used Analysis
+  - Shared Component Risk
+  - Cost Rollup
+  - MPS (Master Production Schedule)
+  - MRP (Material Requirements Planning)
+  - DRP (Distribution Requirements Planning)
+  - Component Stockout Risk
+
+PLANNING HIERARCHY LEVEL:
+Production planning and material planning - the middle layer of the S&OP stack.
+
+
+================================================================================
+APP 4: QUALITY ASSISTANT FOR MANUFACTURING
+================================================================================
+
+Status:  PLANNED
+
+WHO IT'S FOR:
+Quality managers, QC inspectors, quality engineers, supplier quality teams.
+
+CORE PURPOSE:
+Monitor, analyse, and improve product and process quality.
+
+PLANNED FEATURES:
+  - SPC (Statistical Process Control) - control charts
+  - Defect Tracking and Pareto Analysis
+  - Process Capability (Cpk)
+  - Supplier Quality Scorecard
+  - Inspection Sampling Plans (AQL)
+  - Root Cause Analysis (Fishbone, 5-Why)
+  - CAPA Tracking
+
+PLANNING HIERARCHY LEVEL:
+Quality control - runs across all layers of the S&OP stack.
+
+
+================================================================================
+PLANNING HIERARCHY SUMMARY
+================================================================================
+
+  Layer                   Tool                        App
+  ----------------------  --------------------------  --------------------------
+  Distribution planning   DRP, forecasting            App 1: Inventory Assistant
+  Shop floor execution    Line balancing, OEE, DES    App 2: Operations Assistant
+  Production planning     MPS, MRP                    App 3: Production Assistant
+  Quality control         SPC, defect tracking        App 4: Quality Assistant
+
+
+================================================================================
+TECHNOLOGY STACK (ALL APPS)
+================================================================================
+
+  Frontend:      Streamlit (multi-page suite architecture)
+  Hosting:       Hugging Face Spaces (grandfathered CPU Basic free tier)
+  Language:      Python 3.x
+  Key Libraries:
+    Core:        pandas, numpy, matplotlib, openpyxl, streamlit
+    ML / AI:     scikit-learn (IsolationForest, KMeans, XGBoost), scipy (Weibull)
+    Optimisation: pulp (ILP + LP solvers)
+    Forecasting: prophet, statsmodels
+  Color Themes:
+    App 1:       Forest Green (#2d5a2d) + Gold (#d4a017)
+    App 2:       Steel Blue (#2d5a8e) + Gold (#d4a017)
+    Suite Menu:  Dark Green (#2d5a2d) + Gold (#d4a017)
+
+
+================================================================================
+DESIGN PRINCIPLES (ALL APPS)
+================================================================================
+
+  - No login required, fully public and accessible
+  - No data stored or shared, all processing is in-session only
+  - Upload-based, users bring their own Excel files
+  - Plain-English explanations for every analytical output
+  - Root cause analysis flow: broad overview to specific diagnosis
+  - AI features surfaced naturally within analytical sections
+  - No double dashes (em dashes) in any user-facing text
+  - Consistent icon usage, no icon reuse within the same section
+
+================================================================================
